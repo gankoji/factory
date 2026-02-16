@@ -1,0 +1,130 @@
+{
+  "$defs": {
+    "RunBudget": {
+      "additionalProperties": false,
+      "description": "Limits enforced by the run supervisor.",
+      "properties": {
+        "max_minutes": {
+          "title": "Max Minutes",
+          "type": "integer"
+        },
+        "max_tokens": {
+          "title": "Max Tokens",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_minutes",
+        "max_tokens"
+      ],
+      "title": "RunBudget",
+      "type": "object"
+    },
+    "RunState": {
+      "enum": [
+        "claimed",
+        "running",
+        "blocked",
+        "succeeded",
+        "failed",
+        "timed_out",
+        "canceled",
+        "awaiting_approval"
+      ],
+      "title": "RunState",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Execution attempt for a ticket.",
+  "properties": {
+    "budget": {
+      "$ref": "#/$defs/RunBudget"
+    },
+    "ended_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Ended At"
+    },
+    "error_message": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Message"
+    },
+    "harness": {
+      "title": "Harness",
+      "type": "string"
+    },
+    "heartbeat_at": {
+      "format": "date-time",
+      "title": "Heartbeat At",
+      "type": "string"
+    },
+    "lease_token": {
+      "title": "Lease Token",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "sandbox_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Sandbox Id"
+    },
+    "schema_version": {
+      "default": "v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    },
+    "state": {
+      "$ref": "#/$defs/RunState",
+      "default": "claimed"
+    },
+    "ticket_id": {
+      "title": "Ticket Id",
+      "type": "string"
+    },
+    "token_count": {
+      "default": 0,
+      "title": "Token Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "ticket_id",
+    "harness",
+    "lease_token",
+    "budget"
+  ],
+  "title": "Run",
+  "type": "object"
+}

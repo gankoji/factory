@@ -1,0 +1,63 @@
+services:
+  manager:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/manager.Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://factory:factory@postgres:5432/factory
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  runner:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/runner.Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://factory:factory@postgres:5432/factory
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: factory
+      POSTGRES_USER: factory
+      POSTGRES_PASSWORD: factory
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U factory -d factory"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  webhook:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/manager.Dockerfile
+    command: ["uvicorn", "software_factory.services.manager.api:app", "--host", "0.0.0.0", "--port", "8010"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://factory:factory@postgres:5432/factory
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8010:8010"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started

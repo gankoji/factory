@@ -1,0 +1,96 @@
+{
+  "$defs": {
+    "TicketPriority": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "TicketPriority",
+      "type": "string"
+    },
+    "TicketStatus": {
+      "enum": [
+        "ready",
+        "claimed",
+        "completed",
+        "failed"
+      ],
+      "title": "TicketStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Backlog ticket normalized across sources.",
+  "properties": {
+    "acceptance_criteria": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Acceptance Criteria",
+      "type": "array"
+    },
+    "attempts": {
+      "default": 0,
+      "title": "Attempts",
+      "type": "integer"
+    },
+    "context": {
+      "additionalProperties": true,
+      "title": "Context",
+      "type": "object"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "idempotency_key": {
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "priority": {
+      "$ref": "#/$defs/TicketPriority",
+      "default": "medium"
+    },
+    "repo": {
+      "title": "Repo",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": "v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source": {
+      "title": "Source",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/TicketStatus",
+      "default": "ready"
+    },
+    "type": {
+      "title": "Type",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source",
+    "type",
+    "repo",
+    "idempotency_key"
+  ],
+  "title": "Ticket",
+  "type": "object"
+}
