@@ -466,3 +466,13 @@ Exit gate:
 7. SF-010 Local Compose Stack
 
 This sprint establishes the minimum reliable substrate before sandbox and adapter work begins.
+
+---
+
+## 6. Concept Exit Standard
+
+Program completion must satisfy the concept-level Definition of Done in:
+
+`/Users/jacbaile/Workspace/ventures/ai/software-factory/docs/07-concept-success-criteria.md`
+
+Milestone completion alone is not sufficient for claiming the original concept has been achieved.
