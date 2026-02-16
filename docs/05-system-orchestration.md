@@ -1,38 +1,41 @@
 # Role: System Administrator
 
-# Objective: Create the Main Loop and Deployment Config
+# Objective: Build the Main Supervisor Loop and Deployment Config
 
-We have all the components (Discovery, Execution, Governance). Now we need the main event loop to keep this running 24/7.
+We have discovery, execution, and governance services. Now we need a resilient control plane to keep multiple harness sessions running.
 
 ## Task
 
-1. **The Main Loop (`main.py`):**
-   - Write a master script that runs effectively as a daemon.
+1. **The Main Supervisor (`main.py`):**
+   - Write a master loop/service that runs continuously.
    - **Pseudo-code Logic:**
      ```python
      while True:
-        # 1. Discovery Phase (Every 4 hours)
-        if time_to_discover:
-            run_discovery_agents()
+         run_discovery_if_due()
+         recover_stale_leases()
 
-        # 2. Execution Phase (Continuous)
-        backlog = ticket_system.fetch_ready_tickets()
-        if backlog and active_workers < MAX_PARALLEL_WORKERS:
-            ticket = backlog.pop()
-            worker = WorkerAgent(ticket)
-            thread_pool.submit(worker.run)
+         ready = backlog.fetch_ready()
+         free_slots = supervisor.available_capacity()
+         for ticket in select_dispatch_batch(ready, free_slots):
+             supervisor.dispatch(ticket)
 
-        # 3. Governance Phase (Event Driven)
-        check_for_open_prs_to_review()
+         supervisor.monitor_active_runs()
+         governance.process_pending_pr_events()
 
-        sleep(60)
+         publish_metrics()
+         sleep(15)
      ```
+   - Include idempotency, heartbeat expiry, retry/backoff, and dead-letter handling.
 
 2. **Docker Compose:**
-   - Create a `docker-compose.yml` to run this _entire_ orchestration system itself in a container (The "Manager" container).
-   - Ensure the "Manager" container has access to the Docker socket (`/var/run/docker.sock`) so it can spawn sibling containers for the Workers (Docker-in-Docker or Sibling Docker).
+   - Create a `docker-compose.yml` for the control plane services:
+     - `manager` (scheduler/dispatcher API)
+     - `runner` (sandbox execution worker)
+     - `redis` (queue/lease cache)
+     - `postgres` (tickets/runs/audit ledger)
+   - Prefer isolating runtime privileges in `runner`; avoid giving broad host Docker control to `manager`.
 
 **Output:**
 
-- The `main.py` orchestration script.
-- The `docker-compose.yml` for the management layer.
+- `main.py` supervisor script.
+- `docker-compose.yml` for the management layer.

@@ -1,33 +1,31 @@
-# Role: Senior DevOps Architect
+# Role: Principal Platform Engineer
 
-# Objective: Scaffold a "Tri-Loop" Autonomous Development System
+# Objective: Scaffold a Harness-First Control Plane
 
-I am building a 24/7 autonomous software development system with three main loops:
-
-1. **Discovery:** Agents that analyze logs/metrics to create tickets.
-2. **Execution:** Agents that pick up tickets and write code in isolated environments.
-3. **Governance:** Agents that review PRs and perform maintenance.
+We are building a 24/7 autonomous delivery system that **orchestrates existing agent harnesses** instead of creating custom agents.
 
 ## The Stack
 
 - **Language:** Python 3.11+
-- **Orchestration:** LangGraph (for stateful multi-agent flows)
-- **Containerization:** Docker (for ephemeral agent sandboxes)
+- **Orchestration:** Lightweight supervisor + queue/leases (no custom LangGraph cognition required)
+- **Containerization:** Docker (ephemeral run sandboxes)
+- **Harnesses:** Codex CLI, Claude Code, Gemini CLI, OpenHands (via adapters)
 - **VCS:** Git / GitHub
-- **Ticketing:** Linear API (or generic Interface for Jira/GitHub Issues)
+- **Ticketing:** Linear API (or generic interface for Jira/GitHub Issues)
 
 ## Task
 
-Please generate the initial directory structure and the core shared Python libraries for this system.
+Please generate the initial directory structure and core shared Python libraries.
 
-1. **Folder Structure:** Create a structure that separates `core/`, `agents/discovery`, `agents/execution`, `agents/governance`, and `infrastructure/docker`.
-2. **Core Library (`/core`):** - Write a `TicketInterface` abstract base class (methods: `fetch_backlog`, `create_ticket`, `update_status`).
-   - Write a `GitInterface` class (methods: `clone`, `checkout_branch`, `commit`, `push_pr`).
-   - Write a `LLMProvider` wrapper (compatible with OpenAI/Anthropic APIs) to standardise calls across agents.
-3. **Configuration:** Create a robust `config.py` using `pydantic` settings to manage API keys (Linear, GitHub, LLM) and environment variables.
+1. **Folder Structure:** Create a structure that separates `core/backlog`, `core/adapters`, `core/supervisor`, `core/sandbox`, `services/discovery`, `services/governance`, and `infrastructure/docker`.
+2. **Core Libraries (`/core`):**
+   - Write a `BacklogInterface` abstract base class (methods: `fetch_ready`, `claim_ticket`, `heartbeat`, `complete_ticket`, `fail_ticket`, `create_ticket`).
+   - Write an `AgentAdapter` abstract base class (methods: `supports`, `launch_task`, `stream_events`, `send_control`, `collect_artifacts`, `terminate`).
+   - Write a `RunSupervisor` class (methods: `dispatch`, `monitor_run`, `enforce_limits`, `recover_stale_runs`).
+3. **Configuration:** Create a robust `config.py` using `pydantic` settings for API keys (ticketing, GitHub, LLM if needed), enabled harnesses, and per-harness resource limits.
 
 **Output:**
 
 - The bash commands to create the directories.
-- The Python code for the `core` modules mentioned above.
+- The Python code for the `core` modules above.
 - A `requirements.txt` file.

@@ -1,5 +1,10 @@
 # Critique: 24/7 Autonomous Software Factory Design
 
+## Revision Note (2026-02-16)
+
+This critique was written against the pre-pivot design that leaned toward custom agent implementation.
+The current `design-doc.md` has been updated to a harness-first architecture (Codex/Claude/Gemini/OpenHands via adapters), which directly addresses a major strategic concern raised here.
+
 ## Overall Assessment
 
 The design is directionally strong and shows good systems thinking, but it is currently **concept-complete and execution-incomplete**.  

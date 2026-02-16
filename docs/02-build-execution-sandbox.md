@@ -1,34 +1,35 @@
 # Role: Senior Systems Engineer
 
-# Objective: Build the Ephemeral Execution Sandbox
+# Objective: Build the Harness Execution Sandbox
 
-We need a safe environment for our "Worker Agents" to write and test code without destroying the host machine.
+We need a safe environment for external agent harnesses to write and test code without harming the host machine.
 
 ## Context
 
-We have a `/core` library (from the previous step). Now we need the "Factory Floor."
+We have a `/core` library from the previous step. Now we need a sandbox runner that can execute harness sessions in isolation.
 
 ## Task
 
 Design and write the code for the **Execution Sandbox**.
 
 1. **The Dockerfile:** Create a versatile `Dockerfile` in `infrastructure/docker/` that:
-   - Inherits from a slim Python or Node base (depending on target repo).
-   - Installs git, common build tools, and the CLI tools for our stack.
-   - Sets up a non-root user for the agent to run as.
+   - Uses a slim Python base and installs git + common build tools.
+   - Supports installation of selected harness CLIs via build args or optional layers.
+   - Runs as a non-root user.
+   - Mounts a workspace directory for repo checkout and artifacts.
 2. **The Sandbox Controller (`core/sandbox.py`):**
-   - Write a Python class `SandboxManager` that wraps the Docker SDK.
-   - Method `spin_up(repo_url, branch)`: Starts a container, clones the repo, and checks out the branch.
+   - Write a `SandboxManager` class wrapping the Docker SDK.
+   - Method `provision(repo_url, branch, run_id)`: Starts a container, clones the repo, and checks out the branch.
    - Method `run_command(cmd)`: Executes a shell command inside the container and returns `stdout`/`stderr`.
-   - Method `teardown()`: Destroys the container.
-   - **Crucial:** Ensure the container has volume mounts or mechanisms to persist the code changes back to the host or push them to remote.
-
-3. **The Worker Agent Logic (`agents/execution/worker.py`):**
-   - Use LangGraph to define a graph for a "Coding Agent."
-   - **Nodes:** `ReadTicket` -> `PlanChanges` -> `WriteCode` (using Sandbox) -> `RunTests` (using Sandbox) -> `SubmitPR`.
-   - **Constraint:** The agent _must_ use the `SandboxManager` for all file edits and test runs. It cannot run code locally.
+   - Method `run_harness(adapter, task_payload)`: Launches a harness task inside the container.
+   - Method `teardown()`: Destroys the container and captures logs/artifacts.
+   - **Crucial:** Ensure code changes persist through branch pushes or exported patches; no host-side file edits/tests.
+3. **The Execution Runner (`services/execution/runner.py`):**
+   - Build a run workflow: `ClaimTicket -> ProvisionSandbox -> LaunchHarness -> Monitor -> Validate -> SubmitPR -> Finalize`.
+   - The runner must use `SandboxManager` for all edits and test runs.
+   - Add runtime/time/token budget enforcement and stuck-run detection.
 
 **Output:**
 
 - The Dockerfile.
-- The Python code for `SandboxManager` and the LangGraph `worker.py`.
+- Python code for `SandboxManager` and `runner.py`.

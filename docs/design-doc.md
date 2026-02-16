@@ -1,109 +1,181 @@
-# High-Level Design: The 24/7 Autonomous Software Factory
+# High-Level Design: Harness-First Autonomous Software Factory
 
-**Version:** 1.0  
-**Status:** DRAFT  
-**Architectural Pattern:** Tiered Multi-Agent System (TMAS) with Asynchronous Loops
+**Version:** 2.0
+**Status:** DRAFT
+**Architectural Pattern:** Adapter-Driven Control Plane with Asynchronous Service Loops
 
 ---
 
 ## 1. Executive Summary
 
-This system transitions software development from a human-bottlenecked process to a **Manager-of-Agents** model. By implementing a "Tri-Loop" architecture, we decouple the _creation_ of work from the _execution_ of work, allowing a fleet of AI agents to operate 24/7 in parallel. The system utilizes ephemeral sandboxed environments for safety and a strict governance layer to maintain code quality.
+This system is a **manager-of-harnesses**, not a builder of custom coding agents.
+
+Instead of implementing agent cognition in LangGraph (or similar), we run best-in-class external agent harnesses (Codex CLI, Claude Code, Gemini CLI, OpenHands) inside controlled sandboxes. The platform's value is in backlog quality, orchestration reliability, safety guardrails, and governance evidence.
 
 ---
 
-## 2. Core Architecture: The Tri-Loop Model
+## 2. Design Thesis
 
-The system is composed of three asynchronous, self-reinforcing loops.
-
-### Loop 1: Discovery (The Backlog Engine)
-
-- **Objective:** Prevent idle time by autonomously generating high-value maintenance and optimization tasks.
-- **Agents:** \* **Log Miner:** Ingests observability data (Sentry/Datadog). Clusters recurring errors and generates bug reports.
-  - **Coverage Analyst:** Scans the codebase for low-coverage modules and generates "Write Test" tickets.
-  - **Dependency Watchdog:** Monitors `package.json`/`pyproject.toml` for deprecated or vulnerable packages.
-- **Output:** Structured Tickets (Linear/Jira) tagged as `ready-for-robot`.
-
-### Loop 2: Execution (The Factory Floor)
-
-- **Objective:** Parallelize development without context switching or environment conflicts.
-- **Agents:** \* **Worker Swarm:** A scalable fleet of coding agents.
-- **Mechanism:**
-  - **Ephemeral Sandboxes:** Every ticket spins up a fresh, isolated Docker container.
-  - **Tooling:** Agents have CLI access to `git`, `grep`, `sed`, and language-specific linters.
-- **Output:** A GitHub Pull Request (PR) with passing tests.
-
-### Loop 3: Governance (The Quality Gate)
-
-- **Objective:** Ensure no AI-generated code merges without passing strict quality and safety checks.
-- **Agents:** \* **The Reviewer:** A read-only agent that critiques PR diffs against the "Style Guide" and "Architectural Vision."
-  - **Hallucination Check:** Verifies that all introduced dependencies exist in public registries (npm/PyPI).
-- **Output:** PR Comments (Request Changes) or Human Notification (Ready for Merge).
+1. **Buy agent intelligence, build control plane discipline:** Reuse mature agent harnesses and focus internal effort on scheduling, isolation, policy, and observability.
+2. **Adapter-first architecture:** Every harness is integrated through a common `AgentAdapter` contract.
+3. **Deterministic before probabilistic:** Prefer deterministic checks for policy/security; use LLM judgments as secondary signal.
+4. **Progressive autonomy:** Increase automation only after objective reliability and quality metrics are met.
 
 ---
 
-## 3. Technical Stack & Infrastructure
+## 3. Core Architecture: The Tri-Loop (Reframed)
 
-### 3.1 Orchestration Layer
+### Loop 1: Discovery and Backlog Curation
 
-- **Framework:** **LangGraph** (Python). Chosen for its ability to manage stateful, multi-turn agent workflows and cyclical graphs (Plan -> Code -> Error -> Fix).
-- **LLM Provider:** Model-agnostic wrapper (defaulting to GPT-4o or Claude 3.5 Sonnet for coding, lighter models for triage).
+- **Objective:** Keep a high-quality queue of actionable tasks.
+- **Services:** Incident ingestor, coverage scanner, dependency monitor.
+- **Controls:** Deduplication, confidence scoring, suppression windows, priority policy.
+- **Output:** Normalized tickets with acceptance criteria and idempotency keys.
 
-### 3.2 Infrastructure Layer
+### Loop 2: Execution Supervision
 
-- **Container Runtime:** **Docker** (Sibling/Sidecar pattern). The Orchestrator runs in a container and spawns sibling containers for Workers.
-- **Communication:**
-  - **Internal:** Shared Volume Mounts (for code persistence).
-  - **External:** Linear API (Ticketing), GitHub API (VCS), Slack/Discord (Alerting).
+- **Objective:** Keep many harness instances running productively and safely.
+- **Services:** Dispatcher, sandbox manager, run supervisor, harness adapters.
+- **Mechanism:** Each ticket is claimed, assigned to a compatible harness, executed in an ephemeral sandbox, and tracked with heartbeats/timeouts.
+- **Output:** Branch/patch + run evidence + PR URL.
 
-### 3.3 Security & Isolation (The "Sandbox Protocol")
+### Loop 3: Governance and Maintenance
 
-- **Network:** Worker containers have **egress-only** access to whitelisted domains (PyPI, npm, GitHub). No ingress.
-- **Identity:** Agents operate under restricted Service Accounts (`ai-worker-bot`).
-- **Constraints:**
-  - `PROTECTED_BRANCHES`: Agents cannot push to `main` or `production`.
-  - `MAX_BUDGET`: Token usage caps per ticket to prevent infinite loops.
-
----
-
-## 4. Operational Workflows
-
-### 4.1 The "Night Shift" Protocol (Unattended)
-
-1. **18:00:** Human Manager approves a batch of 20 tickets in the `ready-for-robot` queue.
-2. **19:00:** **Orchestrator** spins up 5 concurrent Worker Agents.
-3. **19:05:** **Worker A** claims Ticket #101, spins up `sandbox-101`, clones repo.
-4. **19:30:** **Worker A** runs tests. Tests fail. Agent reads `stderr`, refactors code, re-runs tests.
-5. **20:00:** Tests pass. **Worker A** pushes branch `feat/101-fix` and opens PR. Container `sandbox-101` is destroyed.
-6. **20:05:** **Reviewer Agent** scans PR. Finds missing Docstring. Comments on PR.
-7. **20:10:** **Worker A** wakes up, reads comment, fixes Docstring, pushes update.
-8. **08:00 (Next Day):** Human Manager reviews "Nightly Report" and merges valid PRs.
-
-### 4.2 The "Janitor" Protocol (Scheduled)
-
-- **Trigger:** Cron (Every Sunday at 02:00).
-- **Action:** **Dependency Agent** creates a branch `chore/update-deps`.
-- **Logic:** 1. `npm outdated` 2. For each package: `npm update [package]` -> `npm test`. 3. If Pass: Commit. If Fail: Revert and skip.
-- **Result:** A clean PR with safely updated dependencies waiting for Monday morning.
+- **Objective:** Enforce quality and safety gates before merge.
+- **Services:** Deterministic gatekeeper, optional LLM reviewer, dependency janitor.
+- **Mechanism:** Evaluate PRs against explicit policy checks and attach evidence.
+- **Output:** Structured pass/fail decisions with reproducible artifacts.
 
 ---
 
-## 5. Data Structures
+## 4. Control Plane Components
 
-### 5.1 The Standard Ticket Interface
+### 4.1 Backlog Service
 
-Agents communicate via a standardized JSON schema, regardless of the underlying ticketing system (Jira/Linear).
+- Canonical ticket schema and lifecycle state machine.
+- Lease-based claim protocol to prevent duplicate execution.
+- Priority queue with starvation prevention.
+
+### 4.2 Agent Adapter Layer
+
+- Unified interface across harnesses (`codex`, `claude_code`, `gemini_cli`, `openhands`).
+- Capability metadata: language support, tool availability, max concurrency, cost profile.
+- Session controls: launch, stream events, nudge, cancel, terminate.
+
+### 4.3 Sandbox and Workspace Service
+
+- Ephemeral workspace provisioning per run.
+- Resource limits (CPU/memory/time budget) and constrained networking.
+- Artifact collection (patches, logs, test outputs, trace links).
+
+### 4.4 Governance Pipeline
+
+- Deterministic checks: lint, tests, SAST, dependency/license policy.
+- Optional LLM reviewer for architectural/style feedback.
+- Single policy report posted to PR.
+
+### 4.5 Observability and Audit
+
+- Run ledger for every state transition and command outcome.
+- Metrics: ticket usefulness, rerun rate, PR acceptance rate, MTTR, cost per merged PR.
+- Alerts: stuck runs, retry storms, policy failures, budget overruns.
+
+---
+
+## 5. Canonical Data Contracts
+
+### 5.1 Ticket
 
 ```json
 {
   "id": "ENG-1042",
-  "type": "bug | feature | chore",
-  "priority": "low | medium | high",
+  "source": "sentry|coverage|human",
+  "type": "bug|test-gap|chore",
+  "priority": "low|medium|high|critical",
+  "repo": "frontend-monorepo",
   "context": {
-    "repo": "frontend-monorepo",
     "filepaths": ["src/components/Header.tsx"],
-    "error_logs": "Traceback (most recent call last)..."
+    "error_signature": "TypeError: undefined is not a function"
   },
-  "acceptance_criteria": ["Unit tests pass", "No new React warnings in console"]
+  "acceptance_criteria": [
+    "All unit tests pass",
+    "No new lint violations"
+  ],
+  "idempotency_key": "sha256:..."
 }
 ```
+
+### 5.2 Run
+
+```json
+{
+  "run_id": "run_01J...",
+  "ticket_id": "ENG-1042",
+  "harness": "codex",
+  "state": "claimed|running|blocked|succeeded|failed|timed_out|canceled",
+  "sandbox_id": "sbx_...",
+  "budget": {
+    "max_minutes": 45,
+    "max_tokens": 120000
+  },
+  "artifacts": {
+    "pr_url": "https://github.com/org/repo/pull/123",
+    "logs": "s3://.../run.log"
+  }
+}
+```
+
+---
+
+## 6. Task Lifecycle
+
+1. Discovery creates/updates a normalized ticket.
+2. Dispatcher claims ticket with a lease and idempotency guard.
+3. Supervisor selects harness via adapter capability and policy.
+4. Sandbox manager provisions isolated workspace.
+5. Adapter launches harness session and streams events.
+6. Supervisor enforces heartbeat/time/token/runtime budgets.
+7. On completion, artifacts are collected and PR is opened/updated.
+8. Governance checks run and publish a policy report.
+9. Ticket is completed, retried, or dead-lettered.
+
+---
+
+## 7. Security and Safety Model
+
+- Worker workloads run as non-root with strict resource limits.
+- Protected branch rules and bot-scoped credentials are mandatory.
+- Secrets sourced from managed secret stores; short-lived tokens preferred.
+- Network egress restricted to approved domains where feasible.
+- Circuit breakers halt automation on elevated failure or risk signals.
+
+---
+
+## 8. Deployment Topology
+
+- `manager`: control plane API + scheduler + dispatcher.
+- `runner`: sandbox execution host (can be one pool or many).
+- `queue`: Redis/Postgres-backed job and lease state.
+- `db`: persistent metadata and run ledger.
+- `webhook`: PR and governance event intake.
+
+The manager should not require broad host privileges. Privileged runtime access is isolated to runner infrastructure.
+
+---
+
+## 9. Rollout Plan
+
+1. **Phase 0:** Single repo, one harness, human approval before PR open.
+2. **Phase 1:** Multi-harness routing, deterministic governance mandatory.
+3. **Phase 2:** Auto-open PRs for low-risk classes (tests/chore only).
+4. **Phase 3:** Controlled auto-merge for pre-approved policy lanes.
+
+Advancement requires meeting SLOs and quality/cost thresholds.
+
+---
+
+## 10. Explicit Non-Goals
+
+- Building a bespoke planning/coding/review agent framework.
+- Replacing external harness cognition with internal LangGraph loops.
+- Full autonomy without enforceable safety, audit, and rollback controls.

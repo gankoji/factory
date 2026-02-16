@@ -1,25 +1,27 @@
 # Role: Senior QA Architect
 
-# Objective: Build the Automated Reviewer and Janitor
+# Objective: Build Deterministic Governance and Maintenance Services
 
-We need to ensure that the code produced by the "Worker Agents" is safe and follows conventions before a human sees it.
+We need strong quality gates for code produced by external harnesses before humans review merges.
 
 ## Task
 
-Write the code for the Governance layer in `agents/governance/`.
+Write code for governance services in `services/governance/`.
 
-1. **The Reviewer Agent (`reviewer.py`):**
-   - **Trigger:** Designed to run on a GitHub Pull Request webhook or a manual pointer to a PR.
-   - **Logic:** - Fetches the `diff` of the PR.
-     - Runs a "Policy Check" LLM prompt: "Does this code introduce security risks? Does it follow PEP8/ESLint?"
-     - **Hallucination Check:** Parses `requirements.txt` / `package.json` changes. Verifies if new packages actually exist on PyPI/NPM (mock this verification with a simple HTTP check).
-   - **Action:** Post a comment on the PR (Approved/Request Changes).
+1. **The Gatekeeper (`gatekeeper.py`):**
+   - **Trigger:** GitHub PR webhook or manual PR pointer.
+   - **Logic:**
+     - Fetch PR diff.
+     - Run deterministic checks (lint, tests, security scan, dependency/license checks).
+     - Optional: run a read-only LLM/harness review as secondary signal.
+     - **Dependency integrity check:** Validate introduced packages and versions against registry metadata (not only name existence).
+   - **Action:** Post a structured PR comment with rule IDs, pass/fail status, and evidence links.
 
-2. **The Janitor Agent (`janitor.py`):**
-   - **Task:** A specialized worker that runs on a schedule.
-   - **Capability:** Scans `package.json` or `pyproject.toml` for outdated dependencies.
-   - **Action:** Creates a branch, bumps the version, runs the test suite (via `SandboxManager`), and creates a PR if green.
+2. **The Janitor (`janitor.py`):**
+   - **Task:** Scheduled dependency maintenance.
+   - **Capability:** Scan lockfiles/manifests for outdated dependencies under policy (allowlisted ecosystems, semver constraints).
+   - **Action:** Create branch, apply updates, run tests via `SandboxManager`, and open PR only when checks pass.
 
 **Output:**
 
-- Python code for the Reviewer and Janitor agents.
+- Python code for `gatekeeper.py` and `janitor.py`.
