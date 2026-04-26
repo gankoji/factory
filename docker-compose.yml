@@ -14,6 +14,22 @@ services:
       redis:
         condition: service_started
 
+  dispatcher:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/manager.Dockerfile
+    command: ["python", "-m", "software_factory.services.manager.main"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://factory:factory@postgres:5432/factory
+      REDIS_URL: redis://redis:6379/0
+      MANAGER_DISPATCH_POLL_INTERVAL_SECONDS: 15
+      MANAGER_DISPATCH_BATCH_SIZE: 25
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
   runner:
     build:
       context: .
@@ -21,6 +37,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://factory:factory@postgres:5432/factory
       REDIS_URL: redis://redis:6379/0
+      RUNNER_POLL_INTERVAL_SECONDS: 5
     depends_on:
       postgres:
         condition: service_healthy

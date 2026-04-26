@@ -17,8 +17,8 @@ class QueueInterface(ABC):
     """Queue contract."""
 
     @abstractmethod
-    def enqueue(self, item: QueueItem) -> None:
-        """Push an item onto ready queue."""
+    def enqueue(self, item: QueueItem) -> bool:
+        """Push an item onto ready queue; return True when newly enqueued."""
 
     @abstractmethod
     def dequeue(self) -> QueueItem | None:

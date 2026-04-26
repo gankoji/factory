@@ -10,11 +10,13 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
   "alembic>=1.13.2,<2.0.0",
+  "docker>=7.1.0,<8.0.0",
   "fastapi>=0.115.0,<1.0.0",
   "pydantic>=2.8.2,<3.0.0",
   "pydantic-settings>=2.4.0,<3.0.0",
   "psycopg[binary]>=3.2.1,<4.0.0",
   "redis>=5.0.8,<6.0.0",
+  "requests>=2.32.0,<3.0.0",
   "SQLAlchemy>=2.0.34,<3.0.0",
   "uvicorn>=0.30.6,<1.0.0"
 ]
@@ -63,5 +65,5 @@ mypy_path = "src"
 files = ["src", "tests"]
 
 [[tool.mypy.overrides]]
-module = ["alembic.*", "redis.*"]
+module = ["alembic.*", "redis.*", "docker", "docker.*"]
 ignore_missing_imports = true

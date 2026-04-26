@@ -25,6 +25,17 @@ class Settings(BaseSettings):
     run_heartbeat_timeout_seconds: int = Field(default=120, alias="RUN_HEARTBEAT_TIMEOUT_SECONDS")
     max_run_minutes: int = Field(default=45, alias="MAX_RUN_MINUTES")
     max_run_tokens: int = Field(default=120_000, alias="MAX_RUN_TOKENS")
+    runner_poll_interval_seconds: float = Field(default=5.0, alias="RUNNER_POLL_INTERVAL_SECONDS")
+    default_base_branch: str = Field(default="main", alias="DEFAULT_BASE_BRANCH")
+    push_branches: bool = Field(default=False, alias="PUSH_BRANCHES")
+    sandbox_workspace_root: str = Field(default=".sandbox/workspaces", alias="SANDBOX_WORKSPACE_ROOT")
+    artifacts_root: str = Field(default="artifacts", alias="ARTIFACTS_ROOT")
+    queue_name: str = Field(default="factory:ready", alias="QUEUE_NAME")
+    dead_letter_queue_name: str = Field(default="factory:dlq", alias="DEAD_LETTER_QUEUE_NAME")
+    manager_dispatch_poll_interval_seconds: float = Field(
+        default=15.0, alias="MANAGER_DISPATCH_POLL_INTERVAL_SECONDS"
+    )
+    manager_dispatch_batch_size: int = Field(default=25, alias="MANAGER_DISPATCH_BATCH_SIZE")
 
     enabled_harnesses: list[str] = Field(default_factory=lambda: ["codex"], alias="ENABLED_HARNESSES")
 
